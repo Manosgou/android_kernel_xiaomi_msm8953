@@ -162,8 +162,9 @@ static int sched_energy_probe(struct platform_device *pdev)
 	int cpu;
 	unsigned long *max_frequencies = NULL;
 	int ret;
+	bool is_sge_valid = false;
 
-	if (!sched_feat(ENERGY_AWARE))
+	if (!sched_is_energy_aware())
 		return 0;
 
 	max_frequencies = kmalloc_array(nr_cpu_ids, sizeof(unsigned long),
@@ -230,8 +231,9 @@ static int sched_energy_probe(struct platform_device *pdev)
 		sge_l0 = sge_array[cpu][SD_LEVEL0];
 		if (sge_l0 && sge_l0->nr_cap_states > 0) {
 			int i;
+			int ncapstates = sge_l0->nr_cap_states;
 
-			for (i = 0; i < sge_l0->nr_cap_states; i++) {
+			for (i = 0; i < ncapstates; i++) {
 				int sd_level;
 				unsigned long freq, cap;
 
@@ -258,7 +260,20 @@ static int sched_energy_probe(struct platform_device *pdev)
 					cpu, freq, sge_l0->cap_states[i].cap,
 					sge_l0->cap_states[i].power);
 			}
+
+			is_sge_valid = true;
+			dev_info(&pdev->dev,
+				"cpu=%d eff=%d [freq=%ld cap=%ld power_d0=%ld] -> [freq=%ld cap=%ld power_d0=%ld]\n",
+				cpu, efficiency,
+				sge_l0->cap_states[0].frequency,
+				sge_l0->cap_states[0].cap,
+				sge_l0->cap_states[0].power,
+				sge_l0->cap_states[ncapstates - 1].frequency,
+				sge_l0->cap_states[ncapstates - 1].cap,
+				sge_l0->cap_states[ncapstates - 1].power
+				);
 		}
+
 
 		dev_dbg(&pdev->dev,
 			"cpu=%d efficiency=%d max_frequency=%ld max_efficiency=%d cpu_max_capacity=%ld\n",
@@ -269,6 +284,24 @@ static int sched_energy_probe(struct platform_device *pdev)
 	}
 
 	kfree(max_frequencies);
+
+	if (is_sge_valid) {
+		/*
+		 * Sched_domains might have built with default cpu capacity
+		 * values on bootup.
+		 *
+		 * Let's rebuild them again with actual cpu capacities.
+		 * And partition_sched_domain() expects update in cpu topology
+		 * to rebuild the domains, so make it satisfied..
+		 */
+		update_topology = 1;
+		rebuild_sched_domains();
+		update_topology = 0;
+
+		walt_sched_energy_populated_callback();
+	}
+
+	walt_map_freq_to_load();
 
 	dev_info(&pdev->dev, "Sched-energy-costs capacity updated\n");
 	return 0;

@@ -251,7 +251,7 @@
 			"SpkrLeft IN", "SPK1 OUT",
 			"SpkrRight IN", "SPK2 OUT";
 
-		qcom,tasha-mclk-clk-freq = <9600000>;
+		qcom,tasha-mclk-clk-freq = <12288000>;
 		qcom,cdc-us-euro-gpios = <&tlmm 63 0>;
 		qcom,msm-mbhc-hphl-swh = <0>;
 		qcom,msm-mbhc-gnd-swh = <0>;
@@ -385,8 +385,8 @@
 		qcom,cdc-micbias3-mv = <1800>;
 		qcom,cdc-micbias4-mv = <1800>;
 
-		qcom,cdc-dmic-sample-rate = <2400000>;
-		qcom,cdc-mclk-clk-rate = <9600000>;
+		qcom,cdc-dmic-sample-rate = <4800000>;
+		qcom,cdc-mclk-clk-rate = <12288000>;
 
 		cdc-vdd-buck-supply = <&eldo2_8953>;
 		qcom,cdc-vdd-buck-voltage = <1800000 1800000>;
